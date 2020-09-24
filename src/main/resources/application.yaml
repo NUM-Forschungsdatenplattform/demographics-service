@@ -1,0 +1,42 @@
+spring:
+  datasource:
+    url: 'jdbc:h2:file:./target/database/h2'
+    username: sa
+    password: null
+    driverClassName: org.h2.Driver
+    max-active: 15
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  profiles:
+    ### This is the FHIR version. Choose between, dstu2, dstu3, r4 or r5
+    active: r4
+  jpa:
+    properties:
+      hibernate.dialect: org.hibernate.dialect.H2Dialect
+      hibernate.search.model_mapping: ca.uhn.fhir.jpa.search.LuceneSearchMappingFactory
+      hibernate.format_sql: false
+      hibernate.show_sql: false
+      hibernate.hbm2ddl.auto: update
+      hibernate.jdbc.batch_size: 20
+      hibernate.cache.use_query_cache: false
+      hibernate.cache.use_second_level_cache: false
+      hibernate.cache.use_structured_entries: false
+      hibernate.cache.use_minimal_puts: false
+      hibernate.search.default.directory_provider: filesystem
+      hibernate.search.default.indexBase: target/lucenefiles
+      hibernate.search.lucene_version: LUCENE_CURRENT
+
+hapi:
+  fhir:
+    defer_indexing_for_codesystems_of_size: 101
+    supported_resource_types:
+      - Person
+    tester:
+      -
+          id: home
+          name: Local Tester
+          server_address: 'http://localhost:8080/fhir'
+          refuse_to_fetch_third_party_urls: false
+          fhir_version: R4
