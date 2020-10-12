@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: 'jdbc:h2:file:./target/database/h2'
+    username: sa
+    password: null
+    driverClassName: org.h2.Driver
+    max-active: 15
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  jpa:
+    properties:
+      hibernate:
+        search:
+          lucene_version: LUCENE_CURRENT
+          default:
+            indexBase: target/lucenefiles
+            directory_provider: filesystem
+        jdbc.batch_size: 20
+        search-model-mapping: ca.uhn.fhir.jpa.search.LuceneSearchMappingFactory
+        hbm2ddl-auto: update
+  batch:
+    job:
+      enabled: false
+hapi:
+  fhir_version: R4
+  fhir:
+    supported_resource_types:
+      - Person
