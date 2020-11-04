@@ -55,7 +55,7 @@ jobs:
             ./mvnw versions:set -DnewVersion=$VERSION_NUMBER versions:commit
 
             git commit -am "updated patch version to v${VERSION_NUMBER} [skip ci]"
-            git tag -a $VERSION_NUMBER -m "num-portal release version ${VERSION_NUMBER}"
+            git tag -a $VERSION_NUMBER -m "demographics-service release version ${VERSION_NUMBER}"
             git push --set-upstream origin $CIRCLE_BRANCH
             git push origin --tags
 
@@ -64,7 +64,7 @@ jobs:
 
   build_and_deploy:
     docker:
-      - image: circleci/openjdk:11.0.8-jdk
+      - image: cimg/openjdk:11.0.8
         auth:
           username: $DOCKER_USER
           password: $DOCKER_HUB_PASSWORD
@@ -85,15 +85,15 @@ jobs:
             fi
             echo "Publishing Docker image with following tag: ${TAG}"
             echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
-            ./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=$DOCKER_USER/num-portal:$TAG -DskipTests -Djdk.tls.client.protocols=TLSv1.2
-            docker push $DOCKER_USER/num-portal:$TAG
+            ./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=$DOCKER_USER/demographics-service:$TAG -DskipTests -Djdk.tls.client.protocols=TLSv1.2
+            docker push $DOCKER_USER/demographics-service:$TAG
 
 commands:
   configure-git-for-ci-bot:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - 0c:dd:08:d5:13:cf:20:3c:25:c4:f3:59:a8:a5:c4:36
+            - 63:2f:86:f9:06:47:17:92:ea:24:89:9d:dd:92:ff:af
       - run:
           name: Configure GIT
           command: |
