@@ -124,3 +124,7 @@ commands:
           key: v1-num-portal-deps-{{ checksum "/tmp/num-portal_maven_cache_seed" }}
           paths:
             - ~/.m2
+
+
+orbs:
+  sonarcloud: sonarsource/sonarcloud@1.0.2
