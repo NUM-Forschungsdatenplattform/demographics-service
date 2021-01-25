@@ -8,12 +8,9 @@ import ca.uhn.fhir.rest.server.interceptor.auth.IAuthRule;
 import ca.uhn.fhir.rest.server.interceptor.auth.RuleBuilder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Consent;
@@ -21,8 +18,6 @@ import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Practitioner;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -30,9 +25,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 @Interceptor
 public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
 
-  private static final String ROLE_PREFIX = "ROLE_";
   private static final String REALM_ACCESS = "realm_access";
   private static final String ROLES_CLAIM = "roles";
+  private static final String ADMIN_ROLE = "admin";
 
   @Override
   public List<IAuthRule> buildRuleList(RequestDetails theRequestDetails) {
@@ -49,6 +44,8 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
       addPatientRules(tokenPatientId, rules);
     } else if (StringUtils.isNotEmpty(tokenPractitionerId)) {
       addPractitionerRules(tokenPractitionerId, rules);
+    } else if (checkHasRole(jwt, ADMIN_ROLE)) {
+      addOrganizationRules(rules);
     } else {
       throw new AuthenticationException("Missing or invalid Authorization header value");
     }
@@ -118,17 +115,15 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
       .build();
   }
 
-  private Set<GrantedAuthority> extractAuthorities(Jwt jwt) {
+  private boolean checkHasRole(Jwt jwt, String roleName) {
     JSONObject realmAccess = jwt.getClaim(REALM_ACCESS);
     if (realmAccess != null) {
       final JSONArray roles = (JSONArray) realmAccess.get(ROLES_CLAIM);
 
       if (CollectionUtils.isNotEmpty(roles)) {
-        return roles.stream()
-          .map(role -> new SimpleGrantedAuthority(ROLE_PREFIX + role))
-          .collect(Collectors.toSet());
+        return roles.stream().anyMatch(role -> role.equals(roleName));
       }
     }
-    return SetUtils.emptySet();
+    return false;
   }
 }

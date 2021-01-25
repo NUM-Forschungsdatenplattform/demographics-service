@@ -29,27 +29,36 @@ public class ResourceInterceptor {
 
   private void checkPatientReference(IBaseResource resource) {
     if (resource instanceof Consent) {
-      Jwt jwt =
-        ((JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication())
-          .getToken();
-
-      String tokenPatientId = jwt.getClaim("patient_id");
-      String reference = ((Consent) resource).getPatient().getReference();
-
-      if (StringUtils.isEmpty(tokenPatientId)
-        || !(Patient.class.getSimpleName() + "/" + tokenPatientId).equals(reference)) {
-        throw new ForbiddenOperationException("Reading of not owned consent is not allowed.");
-      }
+      checkPatientReference((Consent) resource);
     }
   }
 
   @Hook(Pointcut.STORAGE_PRESTORAGE_RESOURCE_CREATED)
   public void resourceCreated(RequestDetails theRequest, IBaseResource theResource) {
-    System.out.println(theResource.getIdElement());
+    if (theResource instanceof Consent) {
+      checkPatientReference((Consent) theResource);
+    }
   }
 
   @Hook(Pointcut.STORAGE_PRESTORAGE_RESOURCE_UPDATED)
   public void resourceUpdated(RequestDetails theRequest, IBaseResource theResource) {
-    System.out.println(theResource.getIdElement());
+    if (theResource instanceof Consent) {
+      checkPatientReference((Consent) theResource);
+    }
+  }
+
+  private void checkPatientReference(Consent resource) {
+    Jwt jwt =
+      ((JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication())
+        .getToken();
+
+    String tokenPatientId = jwt.getClaim("patient_id");
+    String reference = resource.getPatient().getReference();
+
+    if (StringUtils.isEmpty(tokenPatientId)
+      || !(Patient.class.getSimpleName() + "/" + tokenPatientId).equals(reference)) {
+      throw new ForbiddenOperationException(
+        "Reading/modifying of not owned consent is not allowed.");
+    }
   }
 }
