@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r4.model.Consent;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Period;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -44,9 +46,21 @@ public class AuthorizationService {
       return false;
     }
 
-    return consent.get().getOrganization().stream()
-      .anyMatch(
-        organization -> organization.getReference().equals("Organization/" + organizationId.get()));
+    boolean hasConsent =
+      consent.get().getOrganization().stream()
+        .anyMatch(
+          organization ->
+            organization.getReference().equals("Organization/" + organizationId.get()));
+
+    if (hasConsent) {
+      Period period = consent.get().getProvision().getPeriod();
+      DateTimeType now = DateTimeType.now();
+      if (now.before(period.getStartElement()) || now.after(period.getEndElement())) {
+        hasConsent = false;
+      }
+      return hasConsent;
+    }
+    return false;
   }
 
   private Optional<Consent> retrieveConsent(String patientId) {
@@ -61,6 +75,7 @@ public class AuthorizationService {
       return Optional.empty();
     }
 
-    return Optional.of((Consent) bundleProvider.getResources(0, bundleProvider.size()).get(0));
+    int bundleSize = bundleProvider.size();
+    return Optional.of((Consent) bundleProvider.getResources(bundleSize - 1, bundleSize).get(0));
   }
 }
