@@ -13,12 +13,13 @@ import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 import ca.uhn.fhir.rest.api.EncodingEnum;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import ca.uhn.fhir.rest.server.provider.ResourceProviderFactory;
+import de.vitagroup.num.interceptors.ResourceAuthorizationInterceptor;
+import de.vitagroup.num.interceptors.ResourceInterceptor;
 import de.vitagroup.num.properties.HapiProperties;
+import java.util.List;
+import javax.servlet.ServletException;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.servlet.ServletException;
-import java.util.List;
 
 @NoArgsConstructor
 public class BaseJpaRestfulServer extends RestfulServer {
@@ -61,12 +62,14 @@ public class BaseJpaRestfulServer extends RestfulServer {
     setFhirContext(fhirSystemDao.getContext());
     registerProviders(resourceProviders.createProviders());
     registerProvider(jpaSystemProvider);
+    registerInterceptor(new ResourceInterceptor());
+    registerInterceptor(new ResourceAuthorizationInterceptor());
 
     FhirVersionEnum fhirVersion = fhirSystemDao.getContext().getVersion().getVersion();
 
     if (fhirVersion == FhirVersionEnum.R4) {
-      JpaConformanceProviderR4 confProvider = new JpaConformanceProviderR4(this, fhirSystemDao,
-        daoConfig, searchParamRegistry);
+      JpaConformanceProviderR4 confProvider =
+        new JpaConformanceProviderR4(this, fhirSystemDao, daoConfig, searchParamRegistry);
       confProvider.setImplementationDescription("HAPI FHIR R4 Server");
       setServerConformanceProvider(confProvider);
     } else {
@@ -78,7 +81,7 @@ public class BaseJpaRestfulServer extends RestfulServer {
     setDefaultPrettyPrint(true);
     setDefaultResponseEncoding(EncodingEnum.JSON);
     setPagingProvider(databaseBackedPagingProvider);
-    daoConfig.setDeferIndexingForCodesystemsOfSize(hapiProperties.getDefer_indexing_for_codesystems_of_size());
+    daoConfig.setDeferIndexingForCodesystemsOfSize(
+      hapiProperties.getDefer_indexing_for_codesystems_of_size());
   }
-
 }
