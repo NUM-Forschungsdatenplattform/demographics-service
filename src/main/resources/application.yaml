@@ -1,14 +1,32 @@
 spring:
   datasource:
-    url: 'jdbc:h2:file:./target/database/h2'
-    username: sa
-    password: null
-    driverClassName: org.h2.Driver
-    max-active: 15
-  h2:
-    console:
-      enabled: true
-      path: /h2
+    hikari:
+      data-source-properties:
+        stringtype: unspecified
+    url: jdbc:postgresql://localhost:5432/demographics
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: postgres
+  flyway:
+    enabled: false
+    user: postgres
+    password: postgres
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${keycloak.url}/auth/realms/master/protocol/openid-connect/certs
+      client:
+        registration:
+          userStoreClient:
+            authorization-grant-type: client_credentials
+            client-id: ctr
+            client-secret: f72479fe-39f2-419d-93f0-5c660b2047e1
+        provider:
+          userStoreClient:
+            token-uri: ${keycloak.url}/auth/realms/master/protocol/openid-connect/token
+    mvc:
+      log-request-details: false
   jpa:
     properties:
       hibernate:
@@ -27,4 +45,9 @@ hapi:
   fhir_version: R4
   fhir:
     supported_resource_types:
-      - Person
+      - Patient
+      - Consent
+      - Practitioner
+      - Organization
+keycloak:
+  url: http://localhost:8082
