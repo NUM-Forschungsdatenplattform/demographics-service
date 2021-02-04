@@ -7,6 +7,9 @@ import ca.uhn.fhir.rest.api.server.IPreResourceShowDetails;
 import ca.uhn.fhir.rest.api.server.RequestDetails;
 import ca.uhn.fhir.rest.server.exceptions.ForbiddenOperationException;
 import ca.uhn.fhir.rest.server.servlet.ServletRequestDetails;
+import de.vitagroup.num.abac.AbacFeign;
+import de.vitagroup.num.abac.ConsentEvent;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Consent;
@@ -16,7 +19,10 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 @Interceptor
+@RequiredArgsConstructor
 public class ResourceInterceptor {
+
+  private final AbacFeign abacFeign;
 
   @Hook(Pointcut.STORAGE_PRESHOW_RESOURCES)
   public void resourceRead(
@@ -36,14 +42,31 @@ public class ResourceInterceptor {
   @Hook(Pointcut.STORAGE_PRESTORAGE_RESOURCE_CREATED)
   public void resourceCreated(RequestDetails theRequest, IBaseResource theResource) {
     if (theResource instanceof Consent) {
-      checkPatientReference((Consent) theResource);
+
+      Consent consent = (Consent) theResource;
+      checkPatientReference(consent);
+      abacFeign.addConsent(
+        ConsentEvent.builder().consent(consent).insert(true).build());
     }
   }
 
   @Hook(Pointcut.STORAGE_PRESTORAGE_RESOURCE_UPDATED)
   public void resourceUpdated(RequestDetails theRequest, IBaseResource theResource) {
     if (theResource instanceof Consent) {
-      checkPatientReference((Consent) theResource);
+      Consent consent = (Consent) theResource;
+      checkPatientReference(consent);
+      abacFeign.addConsent(
+        ConsentEvent.builder().consent(consent).insert(true).build());
+    }
+  }
+
+  @Hook(Pointcut.STORAGE_PRESTORAGE_RESOURCE_DELETED)
+  public void resourceDeleted(RequestDetails theRequest, IBaseResource theResource) {
+    if (theResource instanceof Consent) {
+      Consent consent = (Consent) theResource;
+      checkPatientReference(consent);
+      abacFeign.addConsent(
+        ConsentEvent.builder().consent(consent).insert(false).build());
     }
   }
 
