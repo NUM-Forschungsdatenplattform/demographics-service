@@ -81,6 +81,7 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
     rules.addAll(buildCreateRule("rule_create_consent_resource", Consent.class));
     rules.addAll(buildReadRule("rule_read_consent_resource", Consent.class));
     rules.addAll(buildWriteRule("rule_update_consent_resource", Consent.class));
+    rules.addAll(buildDeleteRule("rule_delete_consent_resource", Consent.class));
   }
 
   private List<IAuthRule> buildCreateRule(String name, Class<? extends IBaseResource> resource) {
@@ -103,6 +104,10 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
 
   private List<IAuthRule> buildWriteRule(String name, Class<? extends IBaseResource> resource) {
     return new RuleBuilder().allow(name).write().resourcesOfType(resource).withAnyId().build();
+  }
+
+  private List<IAuthRule> buildDeleteRule(String name, Class<? extends IBaseResource> resource) {
+    return new RuleBuilder().allow(name).delete().resourcesOfType(resource).withAnyId().build();
   }
 
   private List<IAuthRule> buildWriteRule(
