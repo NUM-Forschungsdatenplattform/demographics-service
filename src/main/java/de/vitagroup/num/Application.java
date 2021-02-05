@@ -10,8 +10,10 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 
+@EnableFeignClients
 @EnableConfigurationProperties({HibernateProperties.class})
 @SpringBootApplication(exclude = {ElasticsearchRestClientAutoConfiguration.class})
 public class Application extends SpringBootServletInitializer {

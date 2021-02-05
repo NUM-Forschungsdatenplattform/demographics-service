@@ -51,3 +51,5 @@ hapi:
       - Organization
 keycloak:
   url: http://localhost:8082
+abac:
+  url: http://localhost:8099

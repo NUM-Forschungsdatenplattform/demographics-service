@@ -13,6 +13,7 @@ import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 import ca.uhn.fhir.rest.api.EncodingEnum;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import ca.uhn.fhir.rest.server.provider.ResourceProviderFactory;
+import de.vitagroup.num.abac.AbacFeign;
 import de.vitagroup.num.interceptors.ResourceAuthorizationInterceptor;
 import de.vitagroup.num.interceptors.ResourceInterceptor;
 import de.vitagroup.num.properties.HapiProperties;
@@ -25,28 +26,31 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class BaseJpaRestfulServer extends RestfulServer {
 
   @Autowired
-  DaoRegistry daoRegistry;
+  private DaoRegistry daoRegistry;
 
   @Autowired
-  DaoConfig daoConfig;
+  private DaoConfig daoConfig;
 
   @Autowired
-  ISearchParamRegistry searchParamRegistry;
+  private ISearchParamRegistry searchParamRegistry;
 
   @Autowired
-  IFhirSystemDao fhirSystemDao;
+  private IFhirSystemDao fhirSystemDao;
 
   @Autowired
-  ResourceProviderFactory resourceProviders;
+  private ResourceProviderFactory resourceProviders;
 
   @Autowired
-  IJpaSystemProvider jpaSystemProvider;
+  private IJpaSystemProvider jpaSystemProvider;
 
   @Autowired
-  DatabaseBackedPagingProvider databaseBackedPagingProvider;
+  private DatabaseBackedPagingProvider databaseBackedPagingProvider;
 
   @Autowired
-  HapiProperties hapiProperties;
+  private HapiProperties hapiProperties;
+
+  @Autowired
+  private AbacFeign abacFeign;
 
   @Override
   protected void initialize() throws ServletException {
@@ -62,7 +66,7 @@ public class BaseJpaRestfulServer extends RestfulServer {
     setFhirContext(fhirSystemDao.getContext());
     registerProviders(resourceProviders.createProviders());
     registerProvider(jpaSystemProvider);
-    registerInterceptor(new ResourceInterceptor());
+    registerInterceptor(new ResourceInterceptor(abacFeign));
     registerInterceptor(new ResourceAuthorizationInterceptor());
 
     FhirVersionEnum fhirVersion = fhirSystemDao.getContext().getVersion().getVersion();
