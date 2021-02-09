@@ -10,6 +10,8 @@ workflows:
             branches:
               only:
                 - feature/NUM-985-nightly-builds
+    jobs:
+      - test
   build_and_test:
     jobs:
       - test:
@@ -21,13 +23,6 @@ workflows:
             branches:
               only:
                 - /^(release\/v\d+\.\d+\.\d+|hotfix\/v\d+\.\d+\.\d+)$/
-      - build_and_deploy:
-          requires:
-            - test
-          filters:
-            branches:
-              only:
-                - /^(release\/v\d+\.\d+\.\d+|hotfix\/v\d+\.\d+\.\d+|master|develop)$/
 jobs:
   test:
     docker:
@@ -76,34 +71,6 @@ jobs:
 
             exit 0
             esac
-
-  build_and_deploy:
-    docker:
-      - image: cimg/openjdk:11.0.9
-        auth:
-          username: $DOCKER_USER
-          password: $DOCKER_HUB_PASSWORD
-    steps:
-      - checkout
-      - configure-git-for-ci-bot
-      - cache-out-maven-dependencies
-      - setup_remote_docker:
-          version: 19.03.13
-      - run:
-          name: Build and tag image and push
-          command: |
-            if [ $CIRCLE_BRANCH = "master" ]; then
-                TAG=$(./mvnw -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive exec:exec)
-            elif [ $CIRCLE_BRANCH = "develop" ]; then
-                TAG=$CIRCLE_BRANCH
-            else
-                TAG="$(echo $CIRCLE_BRANCH | awk -F'/' '{print $2;}')-rc"
-            fi
-            echo "Publishing Docker image with following tag: ${TAG}"
-            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
-            ./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=$DOCKER_USER/demographics-service:$TAG -DskipTests
-            docker push $DOCKER_USER/demographics-service:$TAG
-      - cache-in-maven-dependencies
 
 commands:
   configure-git-for-ci-bot:
