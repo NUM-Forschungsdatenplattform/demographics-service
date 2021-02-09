@@ -2,6 +2,14 @@ version: 2.1
 
 workflows:
   version: 2
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 21 * * *"
+          filters:
+            branches:
+              only:
+                - feature/NUM-985-nightly-builds
   build_and_test:
     jobs:
       - test:
