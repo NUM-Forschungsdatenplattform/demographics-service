@@ -12,17 +12,7 @@ workflows:
                 - feature/NUM-985-nightly-builds
     jobs:
       - test
-  build_and_test:
-    jobs:
-      - test:
-          context: org-global
-      - tag-version:
-          requires:
-            - test
-          filters:
-            branches:
-              only:
-                - /^(release\/v\d+\.\d+\.\d+|hotfix\/v\d+\.\d+\.\d+)$/
+
 jobs:
   test:
     docker:
