@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: demographics
   datasource:
     hikari:
       data-source-properties:
@@ -53,3 +55,8 @@ keycloak:
   url: http://localhost:8082
 abac:
   url: http://localhost:8099
+
+atna.audit:
+  host: localhost
+  port: 514
+

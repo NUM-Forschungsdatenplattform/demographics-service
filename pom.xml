@@ -14,6 +14,7 @@
     <jacoco.version>0.8.6</jacoco.version>
     <dependency-check.version>6.0.3</dependency-check.version>
     <openfeign.version>2.2.5.RELEASE</openfeign.version>
+    <ipf.version>3.7.1</ipf.version>
   </properties>
 
   <parent>
@@ -55,6 +56,10 @@
       <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
     </dependency>
@@ -79,11 +84,6 @@
       <version>${hapi.version}</version>
     </dependency>
     <dependency>
-      <groupId>net.logstash.logback</groupId>
-      <artifactId>logstash-logback-encoder</artifactId>
-      <version>6.1</version>
-    </dependency>
-    <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
     </dependency>
@@ -96,6 +96,21 @@
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-starter-openfeign</artifactId>
       <version>${openfeign.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openehealth.ipf.commons</groupId>
+      <artifactId>ipf-commons-audit</artifactId>
+      <version>${ipf.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openehealth.ipf.boot</groupId>
+      <artifactId>ipf-atna-spring-boot-starter</artifactId>
+      <version>${ipf.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openehealth.ipf.boot</groupId>
+      <artifactId>ipf-fhir-r4-spring-boot-starter</artifactId>
+      <version>${ipf.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

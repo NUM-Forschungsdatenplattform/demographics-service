@@ -12,14 +12,17 @@ import ca.uhn.fhir.jpa.searchparam.registry.ISearchParamRegistry;
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 import ca.uhn.fhir.rest.api.EncodingEnum;
 import ca.uhn.fhir.rest.server.RestfulServer;
+import ca.uhn.fhir.rest.server.interceptor.consent.ConsentInterceptor;
 import ca.uhn.fhir.rest.server.provider.ResourceProviderFactory;
 import de.vitagroup.num.abac.AbacFeign;
+import de.vitagroup.num.interceptors.AuditInterceptor;
 import de.vitagroup.num.interceptors.ResourceAuthorizationInterceptor;
 import de.vitagroup.num.interceptors.ResourceInterceptor;
 import de.vitagroup.num.properties.HapiProperties;
 import java.util.List;
 import javax.servlet.ServletException;
 import lombok.NoArgsConstructor;
+import org.openehealth.ipf.commons.audit.AuditContext;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @NoArgsConstructor
@@ -52,6 +55,9 @@ public class BaseJpaRestfulServer extends RestfulServer {
   @Autowired
   private AbacFeign abacFeign;
 
+  @Autowired
+  private AuditContext auditContext;
+
   @Override
   protected void initialize() throws ServletException {
     super.initialize();
@@ -66,6 +72,7 @@ public class BaseJpaRestfulServer extends RestfulServer {
     setFhirContext(fhirSystemDao.getContext());
     registerProviders(resourceProviders.createProviders());
     registerProvider(jpaSystemProvider);
+    registerInterceptor(new ConsentInterceptor(new AuditInterceptor(auditContext)));
     registerInterceptor(new ResourceInterceptor(abacFeign));
     registerInterceptor(new ResourceAuthorizationInterceptor());
 
