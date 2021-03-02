@@ -5,7 +5,7 @@
 
   <groupId>de.vitagroup.demographics-service</groupId>
   <artifactId>demographics-service</artifactId>
-  <version>v0.1.0</version>
+  <version>v0.2.0</version>
 
   <properties>
     <java.version>11</java.version>
@@ -133,6 +133,10 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
