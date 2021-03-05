@@ -97,7 +97,7 @@ jobs:
           command: |
             if [ $CIRCLE_BRANCH = "master" ]; then
                 TAG=$(./mvnw -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive exec:exec)
-                git push -u origin master:nightly-build # Make sure that the nightly build branch is up-to-date with master
+                git push -u origin master:nightly-builds # Make sure that the nightly build branch is up-to-date with master
             elif [ $CIRCLE_BRANCH = "develop" ]; then
                 TAG=$CIRCLE_BRANCH
             else
