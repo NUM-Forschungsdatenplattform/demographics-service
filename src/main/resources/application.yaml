@@ -5,7 +5,7 @@ spring:
     hikari:
       data-source-properties:
         stringtype: unspecified
-    url: jdbc:postgresql://localhost:5432/demographics
+    url: jdbc:postgresql://localhost:5432/postgres
     driver-class-name: org.postgresql.Driver
     username: postgres
     password: postgres
@@ -59,4 +59,6 @@ abac:
 atna.audit:
   host: localhost
   port: 514
+server:
+  port: 8082
 
