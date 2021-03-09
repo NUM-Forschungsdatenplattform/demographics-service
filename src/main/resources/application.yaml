@@ -23,7 +23,7 @@ spring:
           userStoreClient:
             authorization-grant-type: client_credentials
             client-id: ctr
-            client-secret: f72479fe-39f2-419d-93f0-5c660b2047e1
+            client-secret: 1809deea-7143-4d7b-9ee7-33dd30d27d2b
         provider:
           userStoreClient:
             token-uri: ${keycloak.url}/auth/realms/master/protocol/openid-connect/token
@@ -52,7 +52,7 @@ hapi:
       - Practitioner
       - Organization
 keycloak:
-  url: http://localhost:8082
+  url: http://localhost:8088
 abac:
   url: http://localhost:8099
 
