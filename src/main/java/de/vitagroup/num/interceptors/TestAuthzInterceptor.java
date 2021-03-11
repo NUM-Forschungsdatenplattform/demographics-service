@@ -13,6 +13,6 @@ public class TestAuthzInterceptor extends AuthorizationInterceptor {
   public List<IAuthRule> buildRuleList(RequestDetails pReqDetails) {
     List<IAuthRule> result = new ArrayList<>();
 //    result.add(new RuleBuilder().allowAll("rule_allow_all").build());
-    return new RuleBuilder().allowAll("rule_deny_resource").build();
+    return new RuleBuilder().allowAll("rule_allow_all").build();
   }
 }
