@@ -18,7 +18,6 @@ import de.vitagroup.num.abac.AbacFeign;
 import de.vitagroup.num.interceptors.AuditInterceptor;
 import de.vitagroup.num.interceptors.ResourceAuthorizationInterceptor;
 import de.vitagroup.num.interceptors.ResourceInterceptor;
-import de.vitagroup.num.interceptors.TestAuthzInterceptor;
 import de.vitagroup.num.properties.HapiProperties;
 import java.util.List;
 import javax.servlet.ServletException;
@@ -73,7 +72,6 @@ public class BaseJpaRestfulServer extends RestfulServer {
     setFhirContext(fhirSystemDao.getContext());
     registerProviders(resourceProviders.createProviders());
     registerProvider(jpaSystemProvider);
-    registerInterceptor(new TestAuthzInterceptor());
     registerInterceptor(new ConsentInterceptor(new AuditInterceptor(auditContext)));
     registerInterceptor(new ResourceInterceptor(abacFeign));
     registerInterceptor(new ResourceAuthorizationInterceptor());
