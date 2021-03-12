@@ -18,15 +18,6 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: ${keycloak.url}/auth/realms/master/protocol/openid-connect/certs
-      client:
-        registration:
-          userStoreClient:
-            authorization-grant-type: client_credentials
-            client-id: ctr
-            client-secret: 1809deea-7143-4d7b-9ee7-33dd30d27d2b
-        provider:
-          userStoreClient:
-            token-uri: ${keycloak.url}/auth/realms/master/protocol/openid-connect/token
     mvc:
       log-request-details: false
   jpa:
