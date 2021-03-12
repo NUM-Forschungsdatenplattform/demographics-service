@@ -13,11 +13,7 @@ import net.minidev.json.JSONObject;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseResource;
-import org.hl7.fhir.r4.model.Consent;
-import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.Organization;
-import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -46,11 +42,29 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
       addPractitionerRules(tokenPractitionerId, rules);
     } else if (checkHasRole(jwt, ADMIN_ROLE)) {
       addOrganizationRules(rules);
+      addKeycloakOperationsRules(rules);
     } else {
       throw new AuthenticationException("Missing or invalid Authorization header value");
     }
     rules.addAll(new RuleBuilder().denyAll("rule_deny_resource").build());
     return rules;
+  }
+
+  /*
+  add rules that allow keycloak server to operate on fhir resources
+  this is requied for keycloak to implement SMART on FHIR related behaviour,
+  such as creating a Patient resource during registration, or finding the
+  Patient resource id of a user during login
+   */
+  private void addKeycloakOperationsRules(List<IAuthRule> pRules) {
+    /*If you use HAPI FHIR client in keycloak, it'll make a call to metadata endpoint.
+    * the problem is, you cannot create a rule for the MetadataResource because
+    * that resource does not have the ResourceDef annotation that the rule processing
+    * code requires. So adding that rule will lead to an exception and a failure to
+    * authorise. I solved that problem by disabling metadata call from the FHIR client
+    * but this is something to look into, because any other client can make that call.*/
+    pRules.addAll(buildCreateRule("rule_create_patient_resource", Patient.class));
+    pRules.addAll(buildReadRule("rule_read_patient_resource", Patient.class));
   }
 
   private void addOrganizationRules(List<IAuthRule> rules) {
