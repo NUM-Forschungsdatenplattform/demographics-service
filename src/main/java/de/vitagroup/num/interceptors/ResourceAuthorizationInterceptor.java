@@ -1,6 +1,7 @@
 package de.vitagroup.num.interceptors;
 
 import ca.uhn.fhir.interceptor.api.Interceptor;
+import ca.uhn.fhir.rest.api.RestOperationTypeEnum;
 import ca.uhn.fhir.rest.api.server.RequestDetails;
 import ca.uhn.fhir.rest.server.exceptions.AuthenticationException;
 import ca.uhn.fhir.rest.server.interceptor.auth.AuthorizationInterceptor;
@@ -27,16 +28,26 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
 
   @Override
   public List<IAuthRule> buildRuleList(RequestDetails theRequestDetails) {
+    //allow unconditional access to metadata requests
+    if(theRequestDetails.getRestOperationType() == RestOperationTypeEnum.METADATA){
+      return new RuleBuilder().allowAll("SOF_allow_all").build();
+    }
+
     Jwt jwt =
       ((JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication())
         .getToken();
 
     String tokenPatientId = jwt.getClaim("patient_id");
+    String smartOnFhirPatientId = jwt.getClaim("patient");
     String tokenPractitionerId = jwt.getClaim("practitioner_id");
 
     List<IAuthRule> rules = new ArrayList<>();
 
-    if (StringUtils.isNotEmpty(tokenPatientId)) {
+    //sof is a mutually exclusive case with its own logic
+    if (StringUtils.isNotEmpty(smartOnFhirPatientId)) {
+      addSmartOFPatientRules(smartOnFhirPatientId, rules);
+    }
+    else if (StringUtils.isNotEmpty(tokenPatientId)) {
       addPatientRules(tokenPatientId, rules);
     } else if (StringUtils.isNotEmpty(tokenPractitionerId)) {
       addPractitionerRules(tokenPractitionerId, rules);
@@ -57,7 +68,7 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
   Patient resource id of a user during login
    */
   private void addKeycloakOperationsRules(List<IAuthRule> pRules) {
-    /*If you use HAPI FHIR client in keycloak, it'll make a call to metadata endpoint.
+    /*TODO: If you use HAPI FHIR client in keycloak, it'll make a call to metadata endpoint.
     * the problem is, you cannot create a rule for the MetadataResource because
     * that resource does not have the ResourceDef annotation that the rule processing
     * code requires. So adding that rule will lead to an exception and a failure to
@@ -85,6 +96,12 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
     rules.addAll(buildCreateRule("rule_create_practitioner_resource", Practitioner.class));
   }
 
+  private void addSmartOFPatientRules(String pSmartOnFhirPatientId, List<IAuthRule> rules) {
+    //no create rule -> should be done by keycloak registration at the moment
+    IdType sofId = new IdType(Patient.class.getSimpleName(), pSmartOnFhirPatientId);
+    rules.addAll(buildReadRule("rule_read_own_sof_patient_resource", Patient.class, sofId));
+    rules.addAll(buildWriteRule("rule_update_own_sof_patient_resource", Patient.class, sofId));
+  }
   private void addPatientRules(String tokenPatientId, List<IAuthRule> rules) {
     IdType patientId = new IdType(Patient.class.getSimpleName(), tokenPatientId);
 
