@@ -52,21 +52,3 @@ atna.audit:
   port: 514
 server:
   port: 8080
-
----
-# running this spring boot app with -Dspring.profiles.active=default,dev
-# will override the config values from the default profile above with
-# the dev profile values below.
-  spring:
-    profiles: dev
-    datasource:
-      hikari:
-        data-source-properties:
-          stringtype: unspecified
-      url: jdbc:postgresql://localhost:5432/postgres
-      driver-class-name: org.postgresql.Driver
-      username: postgres
-      password: postgres
-  server:
-    port: 8082
-
