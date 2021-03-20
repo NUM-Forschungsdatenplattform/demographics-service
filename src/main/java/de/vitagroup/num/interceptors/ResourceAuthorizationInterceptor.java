@@ -33,31 +33,35 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
       return new RuleBuilder().allowAll("SOF_allow_all").build();
     }
 
+    //returning this empty will block all requests
+    List<IAuthRule> rules = new ArrayList<>();
+
     Jwt jwt =
       ((JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication())
         .getToken();
 
-    String tokenPatientId = jwt.getClaim("patient_id");
-    String smartOnFhirPatientId = jwt.getClaim("patient");
-    String tokenPractitionerId = jwt.getClaim("practitioner_id");
+    if (jwt != null) {
+      String tokenPatientId = jwt.getClaim("patient_id");
+      String smartOnFhirPatientId = jwt.getClaim("patient");
+      String tokenPractitionerId = jwt.getClaim("practitioner_id");
 
-    List<IAuthRule> rules = new ArrayList<>();
+      //sof is a mutually exclusive case with its own logic
+      if (StringUtils.isNotEmpty(smartOnFhirPatientId)) {
+        addSmartOFPatientRules(smartOnFhirPatientId, rules);
+      }
+      else if (StringUtils.isNotEmpty(tokenPatientId)) {
+        addPatientRules(tokenPatientId, rules);
+      } else if (StringUtils.isNotEmpty(tokenPractitionerId)) {
+        addPractitionerRules(tokenPractitionerId, rules);
+      } else if (checkHasRole(jwt, ADMIN_ROLE)) {
+        addOrganizationRules(rules);
+        addKeycloakOperationsRules(rules);
+      } else {
+        throw new AuthenticationException("Missing or invalid Authorization header value");
+      }
+      rules.addAll(new RuleBuilder().denyAll("rule_deny_resource").build());
+    }
 
-    //sof is a mutually exclusive case with its own logic
-    if (StringUtils.isNotEmpty(smartOnFhirPatientId)) {
-      addSmartOFPatientRules(smartOnFhirPatientId, rules);
-    }
-    else if (StringUtils.isNotEmpty(tokenPatientId)) {
-      addPatientRules(tokenPatientId, rules);
-    } else if (StringUtils.isNotEmpty(tokenPractitionerId)) {
-      addPractitionerRules(tokenPractitionerId, rules);
-    } else if (checkHasRole(jwt, ADMIN_ROLE)) {
-      addOrganizationRules(rules);
-      addKeycloakOperationsRules(rules);
-    } else {
-      throw new AuthenticationException("Missing or invalid Authorization header value");
-    }
-    rules.addAll(new RuleBuilder().denyAll("rule_deny_resource").build());
     return rules;
   }
 
@@ -97,7 +101,7 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
   }
 
   private void addSmartOFPatientRules(String pSmartOnFhirPatientId, List<IAuthRule> rules) {
-    //no create rule -> should be done by keycloak registration at the moment
+    //no rule for create -> should be done by keycloak registration at the moment
     IdType sofId = new IdType(Patient.class.getSimpleName(), pSmartOnFhirPatientId);
     rules.addAll(buildReadRule("rule_read_own_sof_patient_resource", Patient.class, sofId));
     rules.addAll(buildWriteRule("rule_update_own_sof_patient_resource", Patient.class, sofId));
