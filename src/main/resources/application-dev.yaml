@@ -10,5 +10,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: postgres
     password: postgres
+keycloak:
+  url: http://localhost:8088
 server:
   port: 8082
