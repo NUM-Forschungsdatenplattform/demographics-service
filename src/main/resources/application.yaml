@@ -50,5 +50,3 @@ abac:
 atna.audit:
   host: localhost
   port: 514
-server:
-  port: 8080
