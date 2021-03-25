@@ -7,16 +7,18 @@ import ca.uhn.fhir.rest.server.exceptions.AuthenticationException;
 import ca.uhn.fhir.rest.server.interceptor.auth.AuthorizationInterceptor;
 import ca.uhn.fhir.rest.server.interceptor.auth.IAuthRule;
 import ca.uhn.fhir.rest.server.interceptor.auth.RuleBuilder;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseResource;
-import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Consent;
+import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Practitioner;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -30,12 +32,12 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
 
   @Override
   public List<IAuthRule> buildRuleList(RequestDetails theRequestDetails) {
-    //allow unconditional access to metadata requests
+    // allow unconditional access to metadata requests
     if (theRequestDetails.getRestOperationType() == RestOperationTypeEnum.METADATA) {
       return new RuleBuilder().allowAll("SOF_allow_all").build();
     }
 
-    //returning this empty will block all requests
+    // returning this empty will block all requests
     List<IAuthRule> rules = new ArrayList<>();
 
     Jwt jwt =
@@ -47,7 +49,7 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
       String smartOnFhirPatientId = jwt.getClaim("patient");
       String tokenPractitionerId = jwt.getClaim("practitioner_id");
 
-      //sof is a mutually exclusive case with its own logic
+      // sof is a mutually exclusive case with its own logic
       if (StringUtils.isNotEmpty(smartOnFhirPatientId)) {
         addSmartOFPatientRules(smartOnFhirPatientId, rules);
       } else if (StringUtils.isNotEmpty(tokenPatientId)) {
@@ -102,7 +104,7 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
   }
 
   private void addSmartOFPatientRules(String pSmartOnFhirPatientId, List<IAuthRule> rules) {
-    //no rule for create -> should be done by keycloak registration at the moment
+    // no rule for create -> should be done by keycloak registration at the moment
     IdType sofId = new IdType(Patient.class.getSimpleName(), pSmartOnFhirPatientId);
     rules.addAll(buildReadRule("rule_read_own_sof_patient_resource", Patient.class, sofId));
     rules.addAll(buildWriteRule("rule_update_own_sof_patient_resource", Patient.class, sofId));
