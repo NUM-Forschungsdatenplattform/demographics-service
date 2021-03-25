@@ -7,8 +7,10 @@ import ca.uhn.fhir.rest.server.exceptions.AuthenticationException;
 import ca.uhn.fhir.rest.server.interceptor.auth.AuthorizationInterceptor;
 import ca.uhn.fhir.rest.server.interceptor.auth.IAuthRule;
 import ca.uhn.fhir.rest.server.interceptor.auth.RuleBuilder;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import org.apache.commons.collections4.CollectionUtils;
@@ -29,7 +31,7 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
   @Override
   public List<IAuthRule> buildRuleList(RequestDetails theRequestDetails) {
     //allow unconditional access to metadata requests
-    if(theRequestDetails.getRestOperationType() == RestOperationTypeEnum.METADATA){
+    if (theRequestDetails.getRestOperationType() == RestOperationTypeEnum.METADATA) {
       return new RuleBuilder().allowAll("SOF_allow_all").build();
     }
 
@@ -48,8 +50,7 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
       //sof is a mutually exclusive case with its own logic
       if (StringUtils.isNotEmpty(smartOnFhirPatientId)) {
         addSmartOFPatientRules(smartOnFhirPatientId, rules);
-      }
-      else if (StringUtils.isNotEmpty(tokenPatientId)) {
+      } else if (StringUtils.isNotEmpty(tokenPatientId)) {
         addPatientRules(tokenPatientId, rules);
       } else if (StringUtils.isNotEmpty(tokenPractitionerId)) {
         addPractitionerRules(tokenPractitionerId, rules);
@@ -73,11 +74,11 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
    */
   private void addKeycloakOperationsRules(List<IAuthRule> pRules) {
     /*TODO: If you use HAPI FHIR client in keycloak, it'll make a call to metadata endpoint.
-    * the problem is, you cannot create a rule for the MetadataResource because
-    * that resource does not have the ResourceDef annotation that the rule processing
-    * code requires. So adding that rule will lead to an exception and a failure to
-    * authorise. I solved that problem by disabling metadata call from the FHIR client
-    * but this is something to look into, because any other client can make that call.*/
+     * the problem is, you cannot create a rule for the MetadataResource because
+     * that resource does not have the ResourceDef annotation that the rule processing
+     * code requires. So adding that rule will lead to an exception and a failure to
+     * authorise. I solved that problem by disabling metadata call from the FHIR client
+     * but this is something to look into, because any other client can make that call.*/
     pRules.addAll(buildCreateRule("rule_create_patient_resource", Patient.class));
     pRules.addAll(buildReadRule("rule_read_patient_resource", Patient.class));
   }
@@ -106,6 +107,7 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
     rules.addAll(buildReadRule("rule_read_own_sof_patient_resource", Patient.class, sofId));
     rules.addAll(buildWriteRule("rule_update_own_sof_patient_resource", Patient.class, sofId));
   }
+
   private void addPatientRules(String tokenPatientId, List<IAuthRule> rules) {
     IdType patientId = new IdType(Patient.class.getSimpleName(), tokenPatientId);
 
