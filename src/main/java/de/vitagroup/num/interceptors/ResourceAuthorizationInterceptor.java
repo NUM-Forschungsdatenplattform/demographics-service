@@ -29,6 +29,9 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
   private static final String REALM_ACCESS = "realm_access";
   private static final String ROLES_CLAIM = "roles";
   private static final String ADMIN_ROLE = "admin";
+  private static final String PATIENT_ID = "patient_id";
+  private static final String SOF_PATIENT_ID = "patient";
+  private static final String ORGANIZATION_ID = "organization_id";
 
   @Override
   public List<IAuthRule> buildRuleList(RequestDetails theRequestDetails) {
@@ -45,9 +48,9 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
         .getToken();
 
     if (jwt != null) {
-      String tokenPatientId = jwt.getClaim("patient_id");
-      String smartOnFhirPatientId = jwt.getClaim("patient");
-      String tokenPractitionerId = jwt.getClaim("practitioner_id");
+      String tokenPatientId = jwt.getClaim(PATIENT_ID);
+      String smartOnFhirPatientId = jwt.getClaim(SOF_PATIENT_ID);
+      String tokenPractitionerId = jwt.getClaim(ORGANIZATION_ID);
 
       // sof is a mutually exclusive case with its own logic
       if (StringUtils.isNotEmpty(smartOnFhirPatientId)) {
@@ -56,7 +59,7 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
         addPatientRules(tokenPatientId, rules);
       } else if (StringUtils.isNotEmpty(tokenPractitionerId)) {
         addPractitionerRules(tokenPractitionerId, rules);
-      } else if (checkHasRole(jwt, ADMIN_ROLE)) {
+      } else if (checkHasAdminRole(jwt)) {
         addOrganizationRules(rules);
         addKeycloakOperationsRules(rules);
       } else {
@@ -159,13 +162,13 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
       .build();
   }
 
-  private boolean checkHasRole(Jwt jwt, String roleName) {
+  private boolean checkHasAdminRole(Jwt jwt) {
     JSONObject realmAccess = jwt.getClaim(REALM_ACCESS);
     if (realmAccess != null) {
       final JSONArray roles = (JSONArray) realmAccess.get(ROLES_CLAIM);
 
       if (CollectionUtils.isNotEmpty(roles)) {
-        return roles.stream().anyMatch(role -> role.equals(roleName));
+        return roles.stream().anyMatch(role -> role.equals(ADMIN_ROLE));
       }
     }
     return false;
