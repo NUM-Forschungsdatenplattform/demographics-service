@@ -40,7 +40,6 @@ hapi:
     supported_resource_types:
       - Patient
       - Consent
-      - Practitioner
       - Organization
 keycloak:
   url: http://localhost:8082

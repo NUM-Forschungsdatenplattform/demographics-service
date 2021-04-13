@@ -18,7 +18,6 @@ import org.hl7.fhir.r4.model.Consent;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Practitioner;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -29,6 +28,8 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
   private static final String REALM_ACCESS = "realm_access";
   private static final String ROLES_CLAIM = "roles";
   private static final String ADMIN_ROLE = "admin";
+  private static final String PATIENT_ID = "patient_id";
+  private static final String SOF_PATIENT_ID = "patient";
 
   @Override
   public List<IAuthRule> buildRuleList(RequestDetails theRequestDetails) {
@@ -45,18 +46,15 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
         .getToken();
 
     if (jwt != null) {
-      String tokenPatientId = jwt.getClaim("patient_id");
-      String smartOnFhirPatientId = jwt.getClaim("patient");
-      String tokenPractitionerId = jwt.getClaim("practitioner_id");
+      String tokenPatientId = jwt.getClaim(PATIENT_ID);
+      String smartOnFhirPatientId = jwt.getClaim(SOF_PATIENT_ID);
 
       // sof is a mutually exclusive case with its own logic
       if (StringUtils.isNotEmpty(smartOnFhirPatientId)) {
         addSmartOFPatientRules(smartOnFhirPatientId, rules);
       } else if (StringUtils.isNotEmpty(tokenPatientId)) {
         addPatientRules(tokenPatientId, rules);
-      } else if (StringUtils.isNotEmpty(tokenPractitionerId)) {
-        addPractitionerRules(tokenPractitionerId, rules);
-      } else if (checkHasRole(jwt, ADMIN_ROLE)) {
+      } else if (checkHasAdminRole(jwt)) {
         addOrganizationRules(rules);
         addKeycloakOperationsRules(rules);
       } else {
@@ -89,18 +87,6 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
     rules.addAll(buildCreateRule("rule_create_organization_resource", Organization.class));
     rules.addAll(buildReadRule("rule_read_organization_resource", Organization.class));
     rules.addAll(buildWriteRule("rule_update_organization_resource", Organization.class));
-  }
-
-  private void addPractitionerRules(String tokenPractitionerId, List<IAuthRule> rules) {
-    IdType practitionerId = new IdType(Practitioner.class.getSimpleName(), tokenPractitionerId);
-
-    rules.addAll(
-      buildReadRule("rule_read_own_practitioner_resource", Practitioner.class, practitionerId));
-    rules.addAll(
-      buildWriteRule(
-        "rule_update_own_practitioner_resource", Practitioner.class, practitionerId));
-
-    rules.addAll(buildCreateRule("rule_create_practitioner_resource", Practitioner.class));
   }
 
   private void addSmartOFPatientRules(String pSmartOnFhirPatientId, List<IAuthRule> rules) {
@@ -159,13 +145,13 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
       .build();
   }
 
-  private boolean checkHasRole(Jwt jwt, String roleName) {
+  private boolean checkHasAdminRole(Jwt jwt) {
     JSONObject realmAccess = jwt.getClaim(REALM_ACCESS);
     if (realmAccess != null) {
       final JSONArray roles = (JSONArray) realmAccess.get(ROLES_CLAIM);
 
       if (CollectionUtils.isNotEmpty(roles)) {
-        return roles.stream().anyMatch(role -> role.equals(roleName));
+        return roles.stream().anyMatch(role -> role.equals(ADMIN_ROLE));
       }
     }
     return false;
