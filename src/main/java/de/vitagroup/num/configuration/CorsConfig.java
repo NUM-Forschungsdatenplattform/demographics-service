@@ -13,7 +13,8 @@ import org.springframework.web.filter.CorsFilter;
 public class CorsConfig {
 
   private static final String BASE_PATH = "/**";
-  private static final String ALLOWED_ORIGINS = "*";
+
+  private final CorsProperties corsProperties;
 
   @Bean
   public CorsFilter corsFilter() {
@@ -21,7 +22,7 @@ public class CorsConfig {
     CorsConfiguration corsConfiguration = new CorsConfiguration();
 
     corsConfiguration.setAllowCredentials(true);
-    corsConfiguration.setAllowedOriginPatterns(Collections.singletonList(ALLOWED_ORIGINS));
+    corsConfiguration.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());
     corsConfiguration.setAllowedMethods(Collections.singletonList(CorsConfiguration.ALL));
     corsConfiguration.setAllowedHeaders(Collections.singletonList(CorsConfiguration.ALL));
     source.registerCorsConfiguration(BASE_PATH, corsConfiguration);
