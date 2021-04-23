@@ -49,3 +49,7 @@ abac:
 atna.audit:
   host: localhost
   port: 514
+
+cors:
+  allowedOrigins:
+    - "*"
