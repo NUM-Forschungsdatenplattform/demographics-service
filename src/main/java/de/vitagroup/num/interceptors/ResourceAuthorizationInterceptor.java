@@ -1,6 +1,7 @@
 package de.vitagroup.num.interceptors;
 
 import ca.uhn.fhir.interceptor.api.Interceptor;
+import ca.uhn.fhir.rest.api.RestOperationTypeEnum;
 import ca.uhn.fhir.rest.api.server.RequestDetails;
 import ca.uhn.fhir.rest.server.exceptions.AuthenticationException;
 import ca.uhn.fhir.rest.server.interceptor.auth.AuthorizationInterceptor;
@@ -17,7 +18,6 @@ import org.hl7.fhir.r4.model.Consent;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Practitioner;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -28,29 +28,59 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
   private static final String REALM_ACCESS = "realm_access";
   private static final String ROLES_CLAIM = "roles";
   private static final String ADMIN_ROLE = "admin";
+  private static final String PATIENT_ID = "patient_id";
+  private static final String SOF_PATIENT_ID = "patient";
 
   @Override
   public List<IAuthRule> buildRuleList(RequestDetails theRequestDetails) {
+    // allow unconditional access to metadata requests
+    if (theRequestDetails.getRestOperationType() == RestOperationTypeEnum.METADATA) {
+      return new RuleBuilder().allowAll("SOF_allow_all").build();
+    }
+
+    // returning this empty will block all requests
+    List<IAuthRule> rules = new ArrayList<>();
+
     Jwt jwt =
       ((JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication())
         .getToken();
 
-    String tokenPatientId = jwt.getClaim("patient_id");
-    String tokenPractitionerId = jwt.getClaim("practitioner_id");
+    if (jwt != null) {
+      String tokenPatientId = jwt.getClaim(PATIENT_ID);
+      String smartOnFhirPatientId = jwt.getClaim(SOF_PATIENT_ID);
 
-    List<IAuthRule> rules = new ArrayList<>();
-
-    if (StringUtils.isNotEmpty(tokenPatientId)) {
-      addPatientRules(tokenPatientId, rules);
-    } else if (StringUtils.isNotEmpty(tokenPractitionerId)) {
-      addPractitionerRules(tokenPractitionerId, rules);
-    } else if (checkHasRole(jwt, ADMIN_ROLE)) {
-      addOrganizationRules(rules);
-    } else {
-      throw new AuthenticationException("Missing or invalid Authorization header value");
+      // sof is a mutually exclusive case with its own logic
+      if (StringUtils.isNotEmpty(smartOnFhirPatientId)) {
+        addSmartOFPatientRules(smartOnFhirPatientId, rules);
+      } else if (StringUtils.isNotEmpty(tokenPatientId)) {
+        addPatientRules(tokenPatientId, rules);
+      } else if (checkHasAdminRole(jwt)) {
+        addOrganizationRules(rules);
+        addKeycloakOperationsRules(rules);
+      } else {
+        throw new AuthenticationException("Missing or invalid Authorization header value");
+      }
+      rules.addAll(new RuleBuilder().denyAll("rule_deny_resource").build());
     }
-    rules.addAll(new RuleBuilder().denyAll("rule_deny_resource").build());
+
     return rules;
+  }
+
+  /*
+  add rules that allow keycloak server to operate on fhir resources
+  this is requied for keycloak to implement SMART on FHIR related behaviour,
+  such as creating a Patient resource during registration, or finding the
+  Patient resource id of a user during login
+   */
+  private void addKeycloakOperationsRules(List<IAuthRule> pRules) {
+    /*TODO: If you use HAPI FHIR client in keycloak, it'll make a call to metadata endpoint.
+     * the problem is, you cannot create a rule for the MetadataResource because
+     * that resource does not have the ResourceDef annotation that the rule processing
+     * code requires. So adding that rule will lead to an exception and a failure to
+     * authorise. I solved that problem by disabling metadata call from the FHIR client
+     * but this is something to look into, because any other client can make that call.*/
+    pRules.addAll(buildCreateRule("rule_create_patient_resource", Patient.class));
+    pRules.addAll(buildReadRule("rule_read_patient_resource", Patient.class));
   }
 
   private void addOrganizationRules(List<IAuthRule> rules) {
@@ -59,16 +89,11 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
     rules.addAll(buildWriteRule("rule_update_organization_resource", Organization.class));
   }
 
-  private void addPractitionerRules(String tokenPractitionerId, List<IAuthRule> rules) {
-    IdType practitionerId = new IdType(Practitioner.class.getSimpleName(), tokenPractitionerId);
-
-    rules.addAll(
-      buildReadRule("rule_read_own_practitioner_resource", Practitioner.class, practitionerId));
-    rules.addAll(
-      buildWriteRule(
-        "rule_update_own_practitioner_resource", Practitioner.class, practitionerId));
-
-    rules.addAll(buildCreateRule("rule_create_practitioner_resource", Practitioner.class));
+  private void addSmartOFPatientRules(String pSmartOnFhirPatientId, List<IAuthRule> rules) {
+    // no rule for create -> should be done by keycloak registration at the moment
+    IdType sofId = new IdType(Patient.class.getSimpleName(), pSmartOnFhirPatientId);
+    rules.addAll(buildReadRule("rule_read_own_sof_patient_resource", Patient.class, sofId));
+    rules.addAll(buildWriteRule("rule_update_own_sof_patient_resource", Patient.class, sofId));
   }
 
   private void addPatientRules(String tokenPatientId, List<IAuthRule> rules) {
@@ -120,13 +145,13 @@ public class ResourceAuthorizationInterceptor extends AuthorizationInterceptor {
       .build();
   }
 
-  private boolean checkHasRole(Jwt jwt, String roleName) {
+  private boolean checkHasAdminRole(Jwt jwt) {
     JSONObject realmAccess = jwt.getClaim(REALM_ACCESS);
     if (realmAccess != null) {
       final JSONArray roles = (JSONArray) realmAccess.get(ROLES_CLAIM);
 
       if (CollectionUtils.isNotEmpty(roles)) {
-        return roles.stream().anyMatch(role -> role.equals(roleName));
+        return roles.stream().anyMatch(role -> role.equals(ADMIN_ROLE));
       }
     }
     return false;

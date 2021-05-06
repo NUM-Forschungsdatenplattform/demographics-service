@@ -1,0 +1,16 @@
+# running this spring boot app with -Dspring.profiles.active=dev
+# will override the config values from the default profile with
+# the dev profile values below.
+spring:
+  datasource:
+    hikari:
+      data-source-properties:
+        stringtype: unspecified
+    url: jdbc:postgresql://localhost:5432/postgres
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: postgres
+keycloak:
+  url: http://localhost:8088
+server:
+  port: 8082

@@ -5,7 +5,7 @@ spring:
     hikari:
       data-source-properties:
         stringtype: unspecified
-    url: jdbc:postgresql://localhost:5432/demographics
+    url: jdbc:postgresql://localhost:5432/demographic
     driver-class-name: org.postgresql.Driver
     username: postgres
     password: postgres
@@ -18,15 +18,6 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: ${keycloak.url}/auth/realms/master/protocol/openid-connect/certs
-      client:
-        registration:
-          userStoreClient:
-            authorization-grant-type: client_credentials
-            client-id: ctr
-            client-secret: f72479fe-39f2-419d-93f0-5c660b2047e1
-        provider:
-          userStoreClient:
-            token-uri: ${keycloak.url}/auth/realms/master/protocol/openid-connect/token
     mvc:
       log-request-details: false
   jpa:
@@ -49,7 +40,6 @@ hapi:
     supported_resource_types:
       - Patient
       - Consent
-      - Practitioner
       - Organization
 keycloak:
   url: http://localhost:8082
@@ -60,3 +50,6 @@ atna.audit:
   host: localhost
   port: 514
 
+cors:
+  allowedOrigins:
+    - "*"
