@@ -171,4 +171,3 @@ commands:
 orbs:
   sonarcloud: sonarsource/sonarcloud@1.0.2
   slack: circleci/slack@4.1.1
-  
